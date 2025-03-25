@@ -15,17 +15,21 @@ class CatController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Cat::query();
+        // Предзагрузка родителей
+        $query = Cat::with(['parentsRelation.mother', 'parentsRelation.father']);
 
-        if ($request->has('gender') && in_array($request->gender, ['Male', 'Female'])){
+        if ($request->has('gender') && in_array($request->gender, ['Male', 'Female'])) {
             $query->where('gender', $request->gender);
         }
-        if ($request->has('age_min')){
+
+        if ($request->has('age_min')) {
             $query->where('age', '>=', $request->age_min);
         }
-        if ($request->has('age_max')){
+
+        if ($request->has('age_max')) {
             $query->where('age', '<=', $request->age_max);
         }
+
         $cats = $query->paginate(20);
 
         return view('cats.index', compact('cats'));
@@ -67,6 +71,8 @@ class CatController extends Controller
      */
     public function show(Cat $cat)
     {
+        $cat->load(['parentsRelation.mother', 'parentsRelation.father']);
+
         return view('cats.show', compact('cat'));
     }
 
@@ -75,11 +81,12 @@ class CatController extends Controller
      */
     public function edit(Cat $cat)
     {
+        $cat->load(['parentsRelation']);
+
         $mothers = Cat::where('gender', 'Female')->get();
         $fathers = Cat::where('gender', 'Male')->get();
 
         return view('cats.edit', compact('cat', 'mothers', 'fathers'));
-
     }
 
     /**
@@ -89,7 +96,20 @@ class CatController extends Controller
     {
         $cat->update($request->validated());
 
-        return redirect('cats.index')->with('success', 'Кот успешно обновлен');
+        if ($request->has('mother_id') && $request->has('father_ids')) {
+            $cat->parentsRelation()->delete();
+
+            // Создаем новые связи
+            foreach ($request->father_ids as $father_id) {
+                CatsParent::create([
+                    'kitten_id' => $cat->id,
+                    'mother_id' => $request->mother_id,
+                    'father_id' => $father_id,
+                ]);
+            }
+        }
+
+        return redirect()->route('cats.index')->with('success', 'Кот успешно обновлен');
     }
 
     /**
@@ -97,8 +117,9 @@ class CatController extends Controller
      */
     public function destroy(Cat $cat)
     {
+        $cat->parentsRelation()->delete();
         $cat->delete();
 
-        return redirect('cats.index')->with('success', 'Кот успешно удален!');
+        return redirect()->route('cats.index')->with('success', 'Кот успешно удален!');
     }
 }
