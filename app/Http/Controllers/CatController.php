@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CatStoreRequest;
+use App\Http\Requests\CatUpdateRequest;
 use App\Models\Cat;
+use App\Models\CatsParent;
 use Illuminate\Http\Request;
 
 class CatController extends Controller
@@ -45,38 +47,58 @@ class CatController extends Controller
      */
     public function store(CatStoreRequest $request)
     {
-        //
+        $cat = Cat::create($request->validated());
+
+        if ($request->mother_id && $request->father_ids) {
+            foreach ($request->father_ids as $father_id) {
+                CatsParent::create([
+                    'kitten_id' => $cat->id,
+                    'mother_id' => $request->mother_id,
+                    'father_id' => $father_id,
+                ]);
+            }
+        }
+
+        return redirect()->route('cats.index')->with('message', 'Кот успешно добавлен!');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Cat $cat)
     {
-        //
+        return view('cats.show', compact('cat'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Cat $cat)
     {
-        //
+        $mothers = Cat::where('gender', 'Female')->get();
+        $fathers = Cat::where('gender', 'Male')->get();
+
+        return view('cats.edit', compact('cat', 'mothers', 'fathers'));
+
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(CatUpdateRequest $request, Cat $cat)
     {
-        //
+        $cat->update($request->validated());
+
+        return redirect('cats.index')->with('success', 'Кот успешно обновлен');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Cat $cat)
     {
-        //
+        $cat->delete();
+
+        return redirect('cats.index')->with('success', 'Кот успешно удален!');
     }
 }

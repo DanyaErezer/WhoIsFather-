@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class CatStoreRequest extends FormRequest
+class CatUpdateRequest extends FormRequest
 {
     /**
      * Get the validation rules that apply to the request.
@@ -15,11 +15,8 @@ class CatStoreRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:25',
-            'gender' => 'required|string|in:male,female',
+            'gender' => 'required|in:Male,Female',
             'age' => 'required|integer|min:0',
-            'mother_id' => 'nullable|integer|exists:cats,id',
-            'father_ids' => 'nullable|integer|array',
-            'father_ids.*' => 'integer|exists:cats,id',
         ];
     }
 }
