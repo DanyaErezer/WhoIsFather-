@@ -25,7 +25,7 @@ class CatController extends Controller
             ->when($filters['age_min'] ?? false, fn($q, $age) => $q->where('age', '>=', $age))
             ->when($filters['age_max'] ?? false, fn($q, $age) => $q->where('age', '<=', $age))
             ->orderBy('name')
-            ->paginate(20);
+            ->paginate(50);
 
         return view('cats.index', [
             'cats' => $query,
@@ -52,28 +52,29 @@ class CatController extends Controller
         try {
             DB::beginTransaction();
 
-            $cat = Cat::create($request->only(['name', 'gender', 'age']));
+            $cat = Cat::create([
+                'name' => $request->name,
+                'gender' => $request->gender,
+                'age' => $request->age
+            ]);
 
-            if ($request->mother_id && $request->father_ids) {
-                foreach ($request->father_ids as $father_id) {
-                    CatsParent::create([
-                        'kitten_id' => $cat->id,
-                        'mother_id' => $request->mother_id,
-                        'father_id' => $father_id,
-                    ]);
-                }
+            if ($request->mother_id || $request->father_id) {
+                CatsParent::create([
+                    'kitten_id' => $cat->id,
+                    'mother_id' => $request->mother_id,
+                    'father_id' => $request->father_id
+                ]);
             }
 
             DB::commit();
 
             return redirect()->route('cats.index')
-                ->with('success', 'Cat '.$cat->name.' successfully added!');
+                ->with('success', 'Кот '.$cat->name.' успешно добавлен!');
 
         } catch (\Exception $e) {
             DB::rollBack();
-
             return back()->withInput()
-                ->with('error', 'Error creating cat: '.$e->getMessage());
+                ->with('error', 'Ошибка при добавлении кота: '.$e->getMessage());
         }
     }
 
@@ -93,34 +94,30 @@ class CatController extends Controller
     public function edit(Cat $cat)
     {
         $cat->load(['parentsRelation']);
-
         $mothers = Cat::where('gender', 'Female')->get();
         $fathers = Cat::where('gender', 'Male')->get();
 
         return view('cats.edit', compact('cat', 'mothers', 'fathers'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(CatUpdateRequest $request, Cat $cat)
     {
         $cat->update($request->validated());
 
-        if ($request->has('mother_id') && $request->has('father_ids')) {
+        if ($request->mother_id || $request->father_id) {
             $cat->parentsRelation()->delete();
 
-            // Создаем новые связи
-            foreach ($request->father_ids as $father_id) {
-                CatsParent::create([
-                    'kitten_id' => $cat->id,
-                    'mother_id' => $request->mother_id,
-                    'father_id' => $father_id,
-                ]);
-            }
+            CatsParent::create([
+                'kitten_id' => $cat->id,
+                'mother_id' => $request->mother_id,
+                'father_id' => $request->father_id
+            ]);
+        } else {
+            $cat->parentsRelation()->delete();
         }
 
-        return redirect()->route('cats.index')->with('success', 'Кот успешно обновлен');
+        return redirect()->route('cats.show', $cat->id)
+            ->with('success', 'Данные кота успешно обновлены!');
     }
 
     /**

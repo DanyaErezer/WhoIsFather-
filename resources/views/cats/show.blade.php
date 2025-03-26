@@ -66,11 +66,9 @@
                                             <tr>
                                                 <th>Отец:</th>
                                                 <td>
-                                                    @foreach($cat->parentsRelation as $parent)
-                                                        <a href="{{ route('cats.show', $parent->father_id) }}" class="me-2">
-                                                            {{ $parent->father->name }}
-                                                        </a>
-                                                    @endforeach
+                                                    <a href="{{ route('cats.show', $cat->parentsRelation->father_id) }}">
+                                                        {{ $cat->parentsRelation->father->name }}
+                                                    </a>
                                                 </td>
                                             </tr>
                                         @endif

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('kitten_id')->constrained('cats')->onDelete('cascade');
             $table->foreignId('mother_id')->constrained('cats')->onDelete('cascade');
-            $table->foreignId('father_id')->constrained('cats')->onDelete('cascade');
+            $table->foreignId('father_id')->nullable()->constrained('cats')->onDelete('cascade');
             $table->timestamps();
         });
     }

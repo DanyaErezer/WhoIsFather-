@@ -11,12 +11,14 @@ class CatUpdateRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
+    public function rules()
     {
         return [
-            'name' => 'required|string|max:25',
+            'name' => 'required|string|max:255',
             'gender' => 'required|in:Male,Female',
             'age' => 'required|integer|min:0',
+            'mother_id' => 'nullable|exists:cats,id,gender,Female',
+            'father_id' => 'nullable|exists:cats,id,gender,Male'
         ];
     }
 }
