@@ -4,50 +4,59 @@
 
 @section('main_content')
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Cat Registry</h1>
-        <a href="{{ route('cats.create') }}" class="btn btn-primary">Add New Cat</a>
+        <h1>Регистрация котиков</h1>
+        <a href="{{ route('cats.create') }}" class="btn btn-primary">Добавить нового котика</a>
     </div>
 
     <div class="card mb-4">
-        <div class="card-header">Filters</div>
+        <div class="card-header bg-light">Фильтр</div>
         <div class="card-body">
             <form method="GET" action="{{ route('cats.index') }}">
-                <div class="row">
+                <div class="row g-3">
                     <div class="col-md-3">
-                        <label for="gender" class="form-label">Gender</label>
+                        <label for="gender" class="form-label">Пол</label>
                         <select name="gender" id="gender" class="form-select">
-                            <option value="">All</option>
-                            <option value="male" {{ request('gender') == 'male' ? 'selected' : '' }}>Male</option>
-                            <option value="female" {{ request('gender') == 'female' ? 'selected' : '' }}>Female</option>
+                            <option value="">Все</option>
+                            <option value="Male" {{ request('gender') == 'Male' ? 'selected' : '' }}>Male</option>
+                            <option value="Female" {{ request('gender') == 'Female' ? 'selected' : '' }}>Female</option>
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label for="age_min" class="form-label">Min Age</label>
-                        <input type="number" name="age_min" id="age_min" class="form-control" value="{{ request('age_min') }}">
+                        <label for="age_min" class="form-label">Мин</label>
+                        <input type="number" name="age_min" id="age_min"
+                               class="form-control" min="0"
+                               value="{{ request('age_min') }}"
+                               placeholder="От">
                     </div>
                     <div class="col-md-3">
-                        <label for="age_max" class="form-label">Max Age</label>
-                        <input type="number" name="age_max" id="age_max" class="form-control" value="{{ request('age_max') }}">
+                        <label for="age_max" class="form-label">Макс</label>
+                        <input type="number" name="age_max" id="age_max"
+                               class="form-control" min="0"
+                               value="{{ request('age_max') }}"
+                               placeholder="До">
                     </div>
                     <div class="col-md-3 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary me-2">Filter</button>
-                        <a href="{{ route('cats.index') }}" class="btn btn-secondary">Reset</a>
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="bi bi-funnel"></i> Искать
+                        </button>
+                        <a href="{{ route('cats.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-counterclockwise"></i> Сбросить
+                        </a>
                     </div>
                 </div>
             </form>
         </div>
     </div>
-
     <div class="table-responsive">
         <table class="table table-striped">
             <thead>
             <tr>
-                <th>Name</th>
-                <th>Gender</th>
-                <th>Age</th>
-                <th>Mother</th>
-                <th>Father</th>
-                <th>Actions</th>
+                <th>Имя</th>
+                <th>Пол</th>
+                <th>Возраст</th>
+                <th>Мать</th>
+                <th>Отец</th>
+                <th>Функции</th>
             </tr>
             </thead>
             <tbody>
@@ -55,28 +64,28 @@
                 <tr>
                     <td>{{ $cat->name }}</td>
                     <td>{{ ucfirst($cat->gender) }}</td>
-                    <td>{{ $cat->age }} year(s)</td>
+                    <td>{{ $cat->age }} годиков</td>
                     <td>
                         @if($cat->mother)
                             {{ $cat->mother->name }}
                         @else
-                            Unknown
+                            Неизвестно(
                         @endif
                     </td>
                     <td>
                         @if($cat->father)
                             {{ $cat->father->name }}
                         @else
-                            Unknown
+                            Неизвестно)
                         @endif
                     </td>
                     <td>
-                        <a href="{{ route('cats.show', $cat->id) }}" class="btn btn-sm btn-info">View</a>
-                        <a href="{{ route('cats.edit', $cat->id) }}" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="{{ route('cats.show', $cat->id) }}" class="btn btn-sm btn-info">Подробнее</a>
+                        <a href="{{ route('cats.edit', $cat->id) }}" class="btn btn-sm btn-warning">Редактировать</a>
                         <form action="{{ route('cats.destroy', $cat->id) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Удалить</button>
                         </form>
                     </td>
                 </tr>

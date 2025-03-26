@@ -2,37 +2,35 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CatIndexRequest;
 use App\Http\Requests\CatStoreRequest;
 use App\Http\Requests\CatUpdateRequest;
 use App\Models\Cat;
 use App\Models\CatsParent;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CatController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(CatIndexRequest $request)
     {
-        // Предзагрузка родителей
-        $query = Cat::with(['parentsRelation.mother', 'parentsRelation.father']);
+        // Получаем только провалидированные данные без повторной валидации
+        $filters = $request->safe()->only(['gender', 'age_min', 'age_max']);
 
-        if ($request->has('gender') && in_array($request->gender, ['Male', 'Female'])) {
-            $query->where('gender', $request->gender);
-        }
+        $query = Cat::with(['parentsRelation.mother', 'parentsRelation.father'])
+            ->when($filters['gender'] ?? false, fn($q, $gender) => $q->where('gender', $gender))
+            ->when($filters['age_min'] ?? false, fn($q, $age) => $q->where('age', '>=', $age))
+            ->when($filters['age_max'] ?? false, fn($q, $age) => $q->where('age', '<=', $age))
+            ->orderBy('name')
+            ->paginate(20);
 
-        if ($request->has('age_min')) {
-            $query->where('age', '>=', $request->age_min);
-        }
-
-        if ($request->has('age_max')) {
-            $query->where('age', '<=', $request->age_max);
-        }
-
-        $cats = $query->paginate(20);
-
-        return view('cats.index', compact('cats'));
+        return view('cats.index', [
+            'cats' => $query,
+            'filters' => $filters
+        ]);
     }
 
     /**
@@ -51,19 +49,32 @@ class CatController extends Controller
      */
     public function store(CatStoreRequest $request)
     {
-        $cat = Cat::create($request->validated());
+        try {
+            DB::beginTransaction();
 
-        if ($request->mother_id && $request->father_ids) {
-            foreach ($request->father_ids as $father_id) {
-                CatsParent::create([
-                    'kitten_id' => $cat->id,
-                    'mother_id' => $request->mother_id,
-                    'father_id' => $father_id,
-                ]);
+            $cat = Cat::create($request->only(['name', 'gender', 'age']));
+
+            if ($request->mother_id && $request->father_ids) {
+                foreach ($request->father_ids as $father_id) {
+                    CatsParent::create([
+                        'kitten_id' => $cat->id,
+                        'mother_id' => $request->mother_id,
+                        'father_id' => $father_id,
+                    ]);
+                }
             }
-        }
 
-        return redirect()->route('cats.index')->with('message', 'Кот успешно добавлен!');
+            DB::commit();
+
+            return redirect()->route('cats.index')
+                ->with('success', 'Cat '.$cat->name.' successfully added!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return back()->withInput()
+                ->with('error', 'Error creating cat: '.$e->getMessage());
+        }
     }
 
     /**

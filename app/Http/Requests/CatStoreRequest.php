@@ -11,15 +11,15 @@ class CatStoreRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
-    {
-        return [
-            'name' => 'required|string|max:25',
-            'gender' => 'required|string|in:male,female',
-            'age' => 'required|integer|min:0',
-            'mother_id' => 'nullable|integer|exists:cats,id',
-            'father_ids' => 'nullable|integer|array',
-            'father_ids.*' => 'integer|exists:cats,id',
-        ];
-    }
+    public function rules()
+{
+    return [
+        'name' => 'required|string|max:255',
+        'gender' => 'required|in:Male,Female',
+        'age' => 'required|integer|min:0|max:30',
+        'mother_id' => 'nullable|exists:cats,id',
+        'father_ids' => 'nullable|array',
+        'father_ids.*' => 'exists:cats,id'
+    ];
+}
 }
