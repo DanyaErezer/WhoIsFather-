@@ -7,15 +7,18 @@ use App\Http\Requests\CatStoreRequest;
 use App\Http\Requests\CatUpdateRequest;
 use App\Models\Cat;
 use App\Models\CatsParent;
-use Illuminate\Http\Request;
+use Faker\Factory;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
+use PHPUnit\TextUI\Application;
 
 class CatController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(CatIndexRequest $request)
+    public function index(CatIndexRequest $request): Factory|Application|View
     {
         // Получаем только провалидированные данные без повторной валидации
         $filters = $request->safe()->only(['gender', 'age_min', 'age_max']);
@@ -36,7 +39,7 @@ class CatController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): Factory|Application|View
     {
         $mothers = Cat::where('gender', 'Female')->get();
         $fathers = Cat::where('gender', 'Male')->get();
@@ -47,11 +50,10 @@ class CatController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(CatStoreRequest $request)
+    public function store(CatStoreRequest $request): RedirectResponse
     {
         try {
             DB::beginTransaction();
-
             $cat = Cat::create([
                 'name' => $request->name,
                 'gender' => $request->gender,
@@ -65,12 +67,10 @@ class CatController extends Controller
                     'father_id' => $request->father_id
                 ]);
             }
-
             DB::commit();
 
             return redirect()->route('cats.index')
                 ->with('success', 'Кот '.$cat->name.' успешно добавлен!');
-
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withInput()
@@ -81,7 +81,7 @@ class CatController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Cat $cat)
+    public function show(Cat $cat): Factory|Application|View
     {
         $cat->load(['parentsRelation.mother', 'parentsRelation.father']);
 
@@ -91,7 +91,7 @@ class CatController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Cat $cat)
+    public function edit(Cat $cat): Factory|Application|View
     {
         $cat->load(['parentsRelation']);
         $mothers = Cat::where('gender', 'Female')->get();
@@ -100,10 +100,9 @@ class CatController extends Controller
         return view('cats.edit', compact('cat', 'mothers', 'fathers'));
     }
 
-    public function update(CatUpdateRequest $request, Cat $cat)
+    public function update(CatUpdateRequest $request, Cat $cat): RedirectResponse
     {
         $cat->update($request->validated());
-
         if ($request->mother_id || $request->father_id) {
             $cat->parentsRelation()->delete();
 
@@ -123,7 +122,7 @@ class CatController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Cat $cat)
+    public function destroy(Cat $cat): RedirectResponse
     {
         $cat->parentsRelation()->delete();
         $cat->delete();
